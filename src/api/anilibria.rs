@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::{backtrace, collections::HashMap, fmt::Display};
 
 use derive_builder::Builder;
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use thiserror::Error;
 
 const API_ANILIBRIA_HOST: &str = "http://api.anilibria.tv";
 
@@ -216,21 +217,37 @@ pub struct SearchResponse {
     list: Vec<TitleResponse>,
 }
 
-pub async fn api_request<Req, Res>(request: Req, route: &str) -> reqwest::Result<Res>
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("request serialization failed")]
+    RequestSerializationFailed(#[from] serde_url_params::error::Error),
+    #[error("url constructing failed")]
+    UrlConstructingFailed(#[from] url::ParseError),
+    #[error("request failed")]
+    TransportFailed(#[from] reqwest::Error),
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+pub async fn api_request_text<Req>(request: Req, route: &str) -> Result<String>
+where
+    Req: Serialize,
+{
+    let params = serde_url_params::to_string(&request)?;
+    let url = format!("{API_ANILIBRIA_HOST}{route}?{params}");
+    Ok(reqwest::get(Url::parse(&url)?).await?.text().await?)
+}
+
+pub async fn api_request<Req, Res>(request: Req, route: &str) -> Result<Res>
 where
     Req: Serialize,
     Res: DeserializeOwned,
 {
-    let params = serde_url_params::to_string(&request).unwrap();
+    let params = serde_url_params::to_string(&request)?;
     let url = format!("{API_ANILIBRIA_HOST}{route}?{params}");
-    reqwest::get(Url::parse(&url).unwrap()).await?.json().await
+    Ok(reqwest::get(Url::parse(&url)?).await?.json().await?)
 }
 
-pub async fn api_request_text<Req>(request: Req, route: &str) -> reqwest::Result<String>
-where
-    Req: Serialize,
-{
-    let params = serde_url_params::to_string(&request).unwrap();
-    let url = format!("{API_ANILIBRIA_HOST}{route}?{params}");
-    reqwest::get(Url::parse(&url).unwrap()).await?.text().await
+pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
+    api_request(request, "/v3/title/search").await
 }
