@@ -228,7 +228,7 @@ pub enum Error {
     #[error("request failed")]
     TransportFailed(#[from] reqwest::Error),
     #[error("{0}")]
-    ResponseFormatInvalid(DetailedJsonDecodeError),
+    ResponseDeserializationFailed(DetailedJsonDecodeError),
 }
 
 #[derive(Debug)]
@@ -238,8 +238,8 @@ pub struct DetailedJsonDecodeError {
 }
 
 impl DetailedJsonDecodeError {
-    fn new(inner: serde_json::Error, source: String) -> Self {
-        Self { inner, source }
+    fn new(inner: serde_json::Error, source: String) -> Error {
+        Error::ResponseDeserializationFailed(DetailedJsonDecodeError { inner, source })
     }
 }
 
@@ -251,11 +251,7 @@ impl Display for DetailedJsonDecodeError {
         let window = &self.source[loff..roff];
         writeln!(f, "{}", self.inner)?;
         writeln!(f, "{window}")?;
-        writeln!(
-            f,
-            "{}^ here",
-            " ".repeat(loff)
-        )
+        writeln!(f, "{}^ here", " ".repeat(loff))
     }
 }
 
@@ -277,8 +273,7 @@ where
 {
     let resp = api_request_raw(route, request).await?;
     let text = resp.text().await?;
-    serde_json::from_str(&text)
-        .map_err(|x| Error::ResponseFormatInvalid(DetailedJsonDecodeError::new(x, text)))
+    serde_json::from_str(&text).map_err(|x| DetailedJsonDecodeError::new(x, text))
 }
 
 pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
