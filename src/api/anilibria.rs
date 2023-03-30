@@ -1,11 +1,13 @@
-use std::{backtrace, collections::HashMap, fmt::Display};
+#![allow(dead_code)]
+
+use std::{cmp, collections::HashMap, fmt::Display, iter};
 
 use derive_builder::Builder;
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use thiserror::Error;
 
-const API_ANILIBRIA_HOST: &str = "http://api.anilibria.tv";
+pub const API_HOST: &str = "http://api.anilibria.tv";
 
 #[derive(Builder, Serialize, Default)]
 #[serde_with::skip_serializing_none]
@@ -225,29 +227,60 @@ pub enum Error {
     UrlConstructingFailed(#[from] url::ParseError),
     #[error("request failed")]
     TransportFailed(#[from] reqwest::Error),
+    #[error("{0}")]
+    ResponseFormatInvalid(DetailedJsonDecodeError),
+}
+
+#[derive(Debug)]
+pub struct DetailedJsonDecodeError {
+    inner: serde_json::Error,
+    source: String,
+}
+
+impl DetailedJsonDecodeError {
+    fn new(inner: serde_json::Error, source: String) -> Self {
+        Self { inner, source }
+    }
+}
+
+impl Display for DetailedJsonDecodeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let index = self.inner.column();
+        let loff = cmp::max(index as isize - 15, 0) as usize;
+        let roff = index + 15;
+        let window = &self.source[loff..roff];
+        writeln!(f, "{}", self.inner)?;
+        writeln!(f, "{window}")?;
+        writeln!(
+            f,
+            "{}^ here",
+            iter::repeat(' ').take(loff).collect::<String>()
+        )
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub async fn api_request_text<Req>(request: Req, route: &str) -> Result<String>
+async fn api_request_raw<Req>(route: &str, request: Req) -> Result<reqwest::Response>
 where
     Req: Serialize,
 {
     let params = serde_url_params::to_string(&request)?;
-    let url = format!("{API_ANILIBRIA_HOST}{route}?{params}");
-    Ok(reqwest::get(Url::parse(&url)?).await?.text().await?)
+    let url = format!("{API_HOST}{route}?{params}");
+    Ok(reqwest::get(Url::parse(&url)?).await?)
 }
 
-pub async fn api_request<Req, Res>(request: Req, route: &str) -> Result<Res>
+pub async fn api_request<Req, Res>(route: &str, request: Req) -> Result<Res>
 where
     Req: Serialize,
     Res: DeserializeOwned,
 {
-    let params = serde_url_params::to_string(&request)?;
-    let url = format!("{API_ANILIBRIA_HOST}{route}?{params}");
-    Ok(reqwest::get(Url::parse(&url)?).await?.json().await?)
+    let resp = api_request_raw(route, request).await?;
+    let text = resp.text().await?;
+    Ok(serde_json::from_str(&text)
+        .map_err(|x| Error::ResponseFormatInvalid(DetailedJsonDecodeError::new(x, text)))?)
 }
 
 pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
-    api_request(request, "/v3/title/search").await
+    api_request("/v3/title/search", request).await
 }
