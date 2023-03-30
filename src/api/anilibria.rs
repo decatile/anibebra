@@ -222,13 +222,13 @@ pub struct SearchResponse {
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("request serialization failed")]
-    RequestSerializationFailed(#[from] serde_url_params::error::Error),
+    RequestSerialization(#[from] serde_url_params::error::Error),
     #[error("url constructing failed")]
-    UrlConstructingFailed(#[from] url::ParseError),
+    UrlConstructing(#[from] url::ParseError),
     #[error("request failed")]
-    TransportFailed(#[from] reqwest::Error),
+    Transport(#[from] reqwest::Error),
     #[error("{0}")]
-    ResponseDeserializationFailed(DetailedJsonDecodeError),
+    ResponseDeserialization(DetailedJsonDecodeError),
 }
 
 #[derive(Debug)]
@@ -238,8 +238,9 @@ pub struct DetailedJsonDecodeError {
 }
 
 impl DetailedJsonDecodeError {
+    #[allow(clippy::new_ret_no_self)]
     fn new(inner: serde_json::Error, source: String) -> Error {
-        Error::ResponseDeserializationFailed(DetailedJsonDecodeError { inner, source })
+        Error::ResponseDeserialization(DetailedJsonDecodeError { inner, source })
     }
 }
 
@@ -249,15 +250,13 @@ impl Display for DetailedJsonDecodeError {
         let loff = cmp::max(index as isize - 15, 0) as usize;
         let roff = index + 15;
         let window = &self.source[loff..roff];
-        writeln!(f, "{}", self.inner)?;
-        writeln!(f, "{window}")?;
-        writeln!(f, "{}^ here", " ".repeat(loff))
+        writeln!(f, "{}\n{window}\n{}^ here", self.inner, " ".repeat(loff))
     }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-async fn api_request_raw<Req>(route: &str, request: Req) -> Result<reqwest::Response>
+pub async fn api_request_raw<Req>(route: &str, request: Req) -> Result<reqwest::Response>
 where
     Req: Serialize,
 {
