@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::{cmp, collections::HashMap, fmt::Display, iter};
+use std::{cmp, collections::HashMap, fmt::Display};
 
 use derive_builder::Builder;
 use reqwest::Url;
@@ -254,7 +254,7 @@ impl Display for DetailedJsonDecodeError {
         writeln!(
             f,
             "{}^ here",
-            iter::repeat(' ').take(loff).collect::<String>()
+            " ".repeat(loff)
         )
     }
 }
@@ -277,8 +277,8 @@ where
 {
     let resp = api_request_raw(route, request).await?;
     let text = resp.text().await?;
-    Ok(serde_json::from_str(&text)
-        .map_err(|x| Error::ResponseFormatInvalid(DetailedJsonDecodeError::new(x, text)))?)
+    serde_json::from_str(&text)
+        .map_err(|x| Error::ResponseFormatInvalid(DetailedJsonDecodeError::new(x, text)))
 }
 
 pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
