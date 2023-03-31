@@ -249,22 +249,25 @@ impl Display for DetailedJsonDecodeError {
         let index = self.inner.column() - 1;
         let loff = cmp::max(index as isize - 15, 0) as usize;
         let roff = index + 15;
-        let chars = self
+        let mut space_count = 0usize;
+        let window = self
             .source
             .split('\n')
             .nth(self.inner.line() - 1)
             .unwrap()
-            .chars();
-        let mut space_count = 0usize;
-        let window = chars.skip(loff).take(roff - loff).skip_while(|x| {
-            let is_whitespace = x.is_whitespace();
-            space_count += is_whitespace as usize;
-            is_whitespace
-        });
+            .chars()
+            .skip(loff)
+            .take(roff - loff)
+            .skip_while(|x| {
+                let is_whitespace = x.is_whitespace();
+                space_count += is_whitespace as usize;
+                is_whitespace
+            })
+            .collect::<String>();
         writeln!(
             f,
             "{}\n{}^ {} here",
-            window.collect::<String>(),
+            window,
             " ".repeat(index - loff - space_count),
             self.inner
         )
