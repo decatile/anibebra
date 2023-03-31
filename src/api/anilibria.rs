@@ -246,7 +246,7 @@ impl DetailedJsonDecodeError {
 
 impl Display for DetailedJsonDecodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let index = self.inner.column();
+        let index = self.inner.column() - 1;
         let loff = cmp::max(index as isize - 15, 0) as usize;
         let roff = index + 15;
         let window = &self.source[loff..roff];
