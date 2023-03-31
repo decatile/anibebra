@@ -250,7 +250,7 @@ impl Display for DetailedJsonDecodeError {
         let loff = cmp::max(index as isize - 15, 0) as usize;
         let roff = index + 15;
         let window = &self.source[loff..roff];
-        writeln!(f, "{}\n{window}\n{}^ here", self.inner, " ".repeat(loff))
+        writeln!(f, "{}\n{window}\n{}^ here", self.inner, " ".repeat(index - loff))
     }
 }
 
