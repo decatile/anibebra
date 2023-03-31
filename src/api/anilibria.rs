@@ -306,7 +306,7 @@ mod tests {
         println!("{string}");
         let mut buf = String::new();
         stdin().read_line(&mut buf).unwrap();
-        buf.trim() == "1"
+        ["y", "1", ""].contains(&buf.trim())
     }
 
     #[test]
