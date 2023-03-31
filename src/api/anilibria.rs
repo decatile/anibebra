@@ -234,26 +234,19 @@ pub enum Error {
 #[derive(Debug)]
 pub struct DetailedJsonDecodeError {
     inner: serde_json::Error,
-    source: String,
+    msg: String,
 }
 
 impl DetailedJsonDecodeError {
     #[allow(clippy::new_ret_no_self)]
     fn new(inner: serde_json::Error, source: String) -> Error {
-        Error::ResponseDeserialization(DetailedJsonDecodeError { inner, source })
-    }
-}
-
-impl Display for DetailedJsonDecodeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let index = self.inner.column() - 1;
+        let index = inner.column() - 1;
         let loff = cmp::max(index as isize - 15, 0) as usize;
         let roff = index + 15;
         let mut space_count = 0usize;
-        let window = self
-            .source
+        let window = source
             .split('\n')
-            .nth(self.inner.line() - 1)
+            .nth(inner.line() - 1)
             .unwrap()
             .chars()
             .skip(loff)
@@ -264,13 +257,19 @@ impl Display for DetailedJsonDecodeError {
                 is_whitespace
             })
             .collect::<String>();
-        writeln!(
-            f,
+        let msg = format!(
             "{}\n{}^ {} here",
             window,
             " ".repeat(index - loff - space_count),
-            self.inner
-        )
+            inner
+        );
+        Error::ResponseDeserialization(DetailedJsonDecodeError { inner, msg })
+    }
+}
+
+impl Display for DetailedJsonDecodeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.msg)
     }
 }
 
