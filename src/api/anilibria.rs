@@ -3,6 +3,7 @@
 use std::{cmp, collections::HashMap, fmt::Display};
 
 use derive_builder::Builder;
+use make_fields_public::public;
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use thiserror::Error;
@@ -10,6 +11,7 @@ use thiserror::Error;
 pub const API_HOST: &str = "http://api.anilibria.tv";
 
 #[derive(Builder, Serialize, Default)]
+#[public]
 #[serde_with::skip_serializing_none]
 #[builder(setter(strip_option), default)]
 pub struct TitleRequest {
@@ -24,6 +26,7 @@ pub struct TitleRequest {
 }
 
 #[derive(Builder, Serialize, Default)]
+#[public]
 #[serde_with::skip_serializing_none]
 #[builder(setter(strip_option), default)]
 pub struct SearchRequest {
@@ -45,6 +48,7 @@ pub struct SearchRequest {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponse {
     id: i32,
     code: String,
@@ -65,6 +69,7 @@ pub struct TitleResponse {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseNames {
     ru: String,
     en: String,
@@ -72,6 +77,7 @@ pub struct TitleResponseNames {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePosters {
     small: TitleResponsePoster,
     medium: TitleResponsePoster,
@@ -79,18 +85,21 @@ pub struct TitleResponsePosters {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePoster {
     url: String,
     raw_base64_file: Option<String>,
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseStatus {
     string: String,
     code: i32,
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTeam {
     voice: Vec<String>,
     translator: Vec<String>,
@@ -100,6 +109,7 @@ pub struct TitleResponseTeam {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseSeason {
     year: i32,
     week_day: i32,
@@ -108,12 +118,14 @@ pub struct TitleResponseSeason {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseBlocked {
     blocked: bool,
     bakanim: bool,
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePlayer {
     alternative_player: Option<String>,
     host: String,
@@ -122,6 +134,7 @@ pub struct TitleResponsePlayer {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePlayerList {
     episode: f32,
     name: Option<String>,
@@ -133,12 +146,14 @@ pub struct TitleResponsePlayerList {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePlayerListSkips {
     opening: Vec<i32>,
     ending: Vec<i32>,
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePlayerListHls {
     fhd: Option<String>,
     hd: Option<String>,
@@ -146,6 +161,7 @@ pub struct TitleResponsePlayerListHls {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponsePlayerEpisodes {
     string: String,
     first: i32,
@@ -153,12 +169,14 @@ pub struct TitleResponsePlayerEpisodes {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrents {
     episodes: TitleResponseTorrentsEpisodes,
     list: Vec<TitleResponseTorrentsItem>,
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrentsEpisodes {
     string: String,
     first: i32,
@@ -166,6 +184,7 @@ pub struct TitleResponseTorrentsEpisodes {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrentsItem {
     torrent_id: i32,
     episodes: TitleResponseTorrentsItemEpisodes,
@@ -182,6 +201,7 @@ pub struct TitleResponseTorrentsItem {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrentsItemEpisodes {
     string: String,
     first: i32,
@@ -189,6 +209,7 @@ pub struct TitleResponseTorrentsItemEpisodes {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrentsItemQuality {
     string: String,
     #[serde(rename = "type")]
@@ -199,6 +220,7 @@ pub struct TitleResponseTorrentsItemQuality {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrentsItemMetadata {
     hash: String,
     name: String,
@@ -208,6 +230,7 @@ pub struct TitleResponseTorrentsItemMetadata {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct TitleResponseTorrentsItemMetadataFilesListItem {
     file: String,
     size: i32,
@@ -215,6 +238,7 @@ pub struct TitleResponseTorrentsItemMetadataFilesListItem {
 }
 
 #[derive(Deserialize)]
+#[public]
 pub struct SearchResponse {
     list: Vec<TitleResponse>,
 }
@@ -228,16 +252,17 @@ pub enum Error {
     #[error("request failed")]
     Transport(#[from] reqwest::Error),
     #[error("{0}")]
-    ResponseDeserialization(DetailedJsonDecodeError),
+    ResponseDeserialization(FormattedJsonDecodeError),
 }
 
 #[derive(Debug)]
-pub struct DetailedJsonDecodeError {
+#[public]
+pub struct FormattedJsonDecodeError {
     inner: serde_json::Error,
     msg: String,
 }
 
-impl DetailedJsonDecodeError {
+impl FormattedJsonDecodeError {
     #[allow(clippy::new_ret_no_self)]
     fn new(inner: serde_json::Error, source: String) -> Error {
         let index = inner.column() - 1;
@@ -263,11 +288,11 @@ impl DetailedJsonDecodeError {
             " ".repeat(index - loff - space_count),
             inner
         );
-        Error::ResponseDeserialization(DetailedJsonDecodeError { inner, msg })
+        Error::ResponseDeserialization(FormattedJsonDecodeError { inner, msg })
     }
 }
 
-impl Display for DetailedJsonDecodeError {
+impl Display for FormattedJsonDecodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.msg)
     }
@@ -291,7 +316,7 @@ where
 {
     let resp = api_request_raw(route, request).await?;
     let text = resp.text().await?;
-    serde_json::from_str(&text).map_err(|x| DetailedJsonDecodeError::new(x, text))
+    serde_json::from_str(&text).map_err(|x| FormattedJsonDecodeError::new(x, text))
 }
 
 pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
@@ -302,7 +327,7 @@ pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
 mod tests {
     use std::io::stdin;
 
-    use super::DetailedJsonDecodeError;
+    use super::FormattedJsonDecodeError;
 
     fn is_ok(string: String) -> bool {
         println!("{string}");
@@ -315,7 +340,7 @@ mod tests {
     fn test_json_error_display() {
         let json = r#"{"a": 10 xxx}"#;
         let err = serde_json::from_str::<serde_json::Value>(json)
-            .map_err(|x| DetailedJsonDecodeError::new(x, json.to_string()))
+            .map_err(|x| FormattedJsonDecodeError::new(x, json.to_string()))
             .unwrap_err();
         assert!(is_ok(err.to_string()));
 
@@ -342,7 +367,7 @@ mod tests {
             }
         }"#;
         let err = serde_json::from_str::<serde_json::Value>(json)
-            .map_err(|x| DetailedJsonDecodeError::new(x, json.to_string()))
+            .map_err(|x| FormattedJsonDecodeError::new(x, json.to_string()))
             .unwrap_err();
         assert!(is_ok(err.to_string()));
     }
