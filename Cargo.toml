@@ -16,3 +16,5 @@ serde_with = "2.3.1"
 thiserror = "1.0.40"
 tokio = { version = "1.26.0", features = ["full"] }
 url = "2.3.1"
+crossterm = "0.26.1"
+rand = "0.8.5"
