@@ -249,8 +249,25 @@ impl Display for DetailedJsonDecodeError {
         let index = self.inner.column() - 1;
         let loff = cmp::max(index as isize - 15, 0) as usize;
         let roff = index + 15;
-        let window = &self.source[loff..roff];
-        writeln!(f, "{}\n{window}\n{}^ here", self.inner, " ".repeat(index - loff))
+        let chars = self
+            .source
+            .split('\n')
+            .nth(self.inner.line() - 1)
+            .unwrap()
+            .chars();
+        let mut space_count = 0usize;
+        let window = chars.skip(loff).take(roff - loff).skip_while(|x| {
+            let is_whitespace = x.is_whitespace();
+            space_count += is_whitespace as usize;
+            is_whitespace
+        });
+        writeln!(
+            f,
+            "{}\n{}^ {} here",
+            window.collect::<String>(),
+            " ".repeat(index - loff - space_count),
+            self.inner
+        )
     }
 }
 
@@ -277,4 +294,54 @@ where
 
 pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
     api_request("/v3/title/search", request).await
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::stdin;
+
+    use super::DetailedJsonDecodeError;
+
+    fn is_ok(string: String) -> bool {
+        println!("{string}");
+        let mut buf = String::new();
+        stdin().read_line(&mut buf).unwrap();
+        buf.trim() == "1"
+    }
+
+    #[test]
+    fn test_json_error_display() {
+        let json = r#"{"a": 10 xxx}"#;
+        let err = serde_json::from_str::<serde_json::Value>(json)
+            .map_err(|x| DetailedJsonDecodeError::new(x, json.to_string()))
+            .unwrap_err();
+        assert!(is_ok(err.to_string()));
+
+        let json = r#"{
+            "glossary": {
+                "title": "example glossary",
+                "GlossDiv": {
+                    "title": "S",
+                    "GlossList": {
+                        "GlossEntry": {
+                            "ID": x"SGML",
+                            "SortAs": "SGML",
+                            "GlossTerm": "Standard Generalized Markup Language",
+                            "Acronym": "SGML",
+                            "Abbrev": "ISO 8879:1986",
+                            "GlossDef": {
+                                "para": "A meta-markup language, used to create markup languages such as DocBook.",
+                                "GlossSeeAlso": ["GML", "XML"]
+                            },
+                            "GlossSee": "markup"
+                        }
+                    }
+                }
+            }
+        }"#;
+        let err = serde_json::from_str::<serde_json::Value>(json)
+            .map_err(|x| DetailedJsonDecodeError::new(x, json.to_string()))
+            .unwrap_err();
+        assert!(is_ok(err.to_string()));
+    }
 }
