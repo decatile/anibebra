@@ -9,7 +9,6 @@ edition = "2021"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 derive_builder = "0.12.0"
 make-fields-public = { git = "https://github.com/VanOvermeire/make-structs-public-macro", version = "0.1.0" }
-optional_struct = "0.3.1"
 reqwest = { version = "0.11.16", features = ["json"] }
 serde = { version = "1.0.158", features = ["derive"] }
 serde_json = "1.0.95"

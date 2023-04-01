@@ -4,7 +4,6 @@ use std::{cmp, collections::HashMap, fmt::Display};
 
 use derive_builder::Builder;
 use make_fields_public::public;
-use optional_struct::{optional_struct, Applyable};
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use thiserror::Error;
@@ -14,40 +13,38 @@ pub const API_HOST: &str = "http://api.anilibria.tv";
 #[derive(Builder, Serialize, Default)]
 #[builder(setter(strip_option), default)]
 #[serde_with::skip_serializing_none]
-#[optional_struct]
 #[public]
 pub struct TitleRequest {
-    id: i32,
-    code: String,
-    torrent_id: i32,
-    filter: Vec<String>,
-    remove: Vec<String>,
-    include: Vec<String>,
-    description_type: String,
-    playlist_type: String,
+    id: Option<i32>,
+    code: Option<String>,
+    torrent_id: Option<i32>,
+    filter: Option<Vec<String>>,
+    remove: Option<Vec<String>>,
+    include: Option<Vec<String>>,
+    description_type: Option<String>,
+    playlist_type: Option<String>,
 }
 
 #[derive(Builder, Serialize, Default)]
 #[builder(setter(strip_option), default)]
 #[serde_with::skip_serializing_none]
-#[optional_struct]
 #[public]
 pub struct SearchRequest {
-    search: Vec<String>,
-    year: Vec<String>,
-    season_code: Vec<String>,
-    genres: Vec<String>,
-    team: Vec<String>,
-    voice: Vec<String>,
-    filter: Vec<String>,
-    remove: Vec<String>,
-    include: Vec<String>,
-    description_type: String,
-    playlist_type: String,
-    limit: i32,
-    after: i32,
-    page: i32,
-    items_per_page: i32,
+    search: Option<Vec<String>>,
+    year: Option<Vec<String>>,
+    season_code: Option<Vec<String>>,
+    genres: Option<Vec<String>>,
+    team: Option<Vec<String>>,
+    voice: Option<Vec<String>>,
+    filter: Option<Vec<String>>,
+    remove: Option<Vec<String>>,
+    include: Option<Vec<String>>,
+    description_type: Option<String>,
+    playlist_type: Option<String>,
+    limit: Option<i32>,
+    after: Option<i32>,
+    page: Option<i32>,
+    items_per_page: Option<i32>,
 }
 
 #[derive(Deserialize)]
