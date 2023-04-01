@@ -319,10 +319,6 @@ where
     serde_json::from_str(&text).map_err(|x| FormattedJsonDecodeError::new(x, text))
 }
 
-pub async fn get_title(request: TitleRequest) -> Result<TitleResponse> {
-    api_request("/v3/title", request).await
-}
-
 pub async fn search_titles(request: SearchRequest) -> Result<SearchResponse> {
     api_request("/v3/title/search", request).await
 }
