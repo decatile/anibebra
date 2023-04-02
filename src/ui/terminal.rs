@@ -13,12 +13,12 @@ use tui::{
     Terminal,
 };
 
-struct BebraCommand {
+struct BebraCommand<'a> {
     name: String,
-    func: Box<dyn Fn()>,
+    func: Box<dyn Fn() + 'a>,
 }
-impl BebraCommand {
-    fn new(name: String, func: impl Fn() + 'static) -> Self {
+impl<'a> BebraCommand<'a> {
+    fn new(name: String, func: impl Fn() + 'a) -> Self {
         BebraCommand {
             name,
             func: Box::new(func),
@@ -47,13 +47,13 @@ fn ui() -> Result<()> {
             "Никита Серов нюхает бебру".to_string(),
             &|| println!("{}", "Никита Серов нюхает бебру".to_string()),
         ),
-        BebraCommand::new("Елисей нюхает бебру".to_string(), &|| {
+        BebraCommand::new("Елисей нюхает бебру".to_string(), || {
             println!("{}", "Елисей нюхает бебру".to_string())
         }),
-        BebraCommand::new("Карнаж нюхает бебру".to_string(), &|| {
+        BebraCommand::new("Карнаж нюхает бебру".to_string(), || {
             println!("{}", "Карнаж нюхает бебру".to_string())
         }),
-        BebraCommand::new("Шамиль нюхает бебру".to_string(), &|| {
+        BebraCommand::new("Шамиль нюхает бебру".to_string(), || {
             println!("{}", "Шамиль нюхает бебру".to_string())
         }),
     ];
