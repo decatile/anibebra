@@ -20,8 +20,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build & test
       run: |
-        cargo test --verbose
-        cargo build --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-gnu --release --verbose
+        cargo test
+        cargo build --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-gnu --release
         mkdir out
         cp target/x86_64-unknown-linux-gnu/release/anibebra out/anibebra-linux
         cp target/x86_64-pc-windows-gnu/release/anibebra.exe out/anibebra-win.exe
