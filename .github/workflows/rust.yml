@@ -1,0 +1,37 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: rust:latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Build for linux & windows
+      run: |
+        cargo build --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-gnu --release --verbose
+        mkdir out
+        cp target/x86_64-unknown-linux-gnu/release/anibebra out/anibebra-linux
+        cp target/x86_64-pc-windows-gnu/release/anibebra.exe out/anibebra-win.exe
+    - uses: marvinpinto/action-automatic-releases@latest
+    - name: Publish release
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Автоматический релиз"
+        description: "Автоматически собранный релиз на все платформы после пуша в ветку main"
+        files: |
+          out/anibebra-linux
+          out/anibebra-win.exe
