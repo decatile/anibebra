@@ -23,8 +23,8 @@ jobs:
         mkdir out
         cp target/x86_64-unknown-linux-gnu/release/anibebra out/anibebra-linux
         cp target/x86_64-pc-windows-gnu/release/anibebra.exe out/anibebra-win.exe
-    - uses: marvinpinto/action-automatic-releases@latest
     - name: Publish release
+      uses: marvinpinto/action-automatic-releases@latest
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: "latest"
