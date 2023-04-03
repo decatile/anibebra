@@ -16,10 +16,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Run tests
-      run: cargo test --verbose
-    - name: Build for linux & windows
+    - name: Build & test
       run: |
+        cargo test --verbose
         cargo build --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-gnu --release --verbose
         mkdir out
         cp target/x86_64-unknown-linux-gnu/release/anibebra out/anibebra-linux
